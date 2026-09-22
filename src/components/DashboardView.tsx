@@ -12,7 +12,6 @@ import {
   Filter, 
   FileText, 
   Eye, 
-  Award,
   ChevronRight,
   Zap,
   ArrowUpRight,
@@ -38,7 +37,6 @@ import { LiveSession, Streamer, Shift, UserRole } from '../types';
 import { exportSessionsToExcel, exportSessionsToCsv, exportSingleSessionPdf } from '../lib/exportUtils';
 import { ShopeeWawasanCard } from './ShopeeWawasanCard';
 import { HourlyHeatmapView } from './HourlyHeatmapView';
-import { TopPerformersWidget } from './TopPerformersWidget';
 import { DateRangePicker, DatePreset } from './DateRangePicker';
 
 interface DashboardViewProps {
@@ -302,42 +300,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       peakDay,
     };
   }, [sessions, selectedStreamerId, selectedShiftId]);
-
-  // Leaderboard Calculation
-  const leaderboard = useMemo(() => {
-    const map = new Map<string, {
-      streamer: Streamer;
-      revenue: number;
-      orders: number;
-      hours: number;
-      sessions: number;
-      clicks: number;
-    }>();
-
-    streamers.forEach(st => {
-      map.set(st.id, { streamer: st, revenue: 0, orders: 0, hours: 0, sessions: 0, clicks: 0 });
-    });
-
-    filteredSessions.forEach(s => {
-      const existing = map.get(s.streamerId);
-      if (existing) {
-        existing.revenue += s.revenue || 0;
-        existing.orders += s.orders || 0;
-        existing.hours += s.durationHours || 0;
-        existing.clicks += s.productClicks || 0;
-        existing.sessions += 1;
-      }
-    });
-
-    return Array.from(map.values())
-      .filter(item => item.sessions > 0)
-      .map(item => ({
-        ...item,
-        revenuePerHour: item.hours > 0 ? Math.round(item.revenue / item.hours) : 0,
-        cvr: item.clicks > 0 ? Number(((item.orders / item.clicks) * 100).toFixed(1)) : 0
-      }))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [filteredSessions, streamers]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -894,116 +856,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         shifts={shifts} 
         streamers={streamers} 
       />
-
-      {/* Top Performers Widget (Ranked streamers based on current week revenue or custom range) */}
-      <TopPerformersWidget 
-        sessions={sessions} 
-        streamers={streamers} 
-        onSelectStreamer={(id) => setSelectedStreamerId(id)}
-        dashboardDateRange={{
-          startStr: effectiveDateRange.start,
-          endStr: effectiveDateRange.end,
-          label: `${effectiveDateRange.start} s/d ${effectiveDateRange.end}`,
-          isCustom: dateFilter === 'custom',
-        }}
-      />
-
-      {/* Leaderboard Streamer & Top Performer */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-              <Award className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900">
-                Peringkat & Efisiensi Host Streamer
-              </h2>
-              <p className="text-xs text-slate-500">
-                Leaderboard performa penjualan dan konversi tim streamer
-              </p>
-            </div>
-          </div>
-          <span className="text-xs text-slate-400">Diurutkan berdasarkan Omset Terbesar</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
-                <th className="pb-3 pl-2">Rank</th>
-                <th className="pb-3">Streamer</th>
-                <th className="pb-3">Total Omset (Rp)</th>
-                <th className="pb-3">Pesanan</th>
-                <th className="pb-3">Jam Live</th>
-                <th className="pb-3">Omset / Jam</th>
-                <th className="pb-3">CVR (%)</th>
-                <th className="pb-3 text-right pr-2">Rating & Badge</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {leaderboard.map((item, idx) => {
-                const rank = idx + 1;
-                let badgeColor = 'bg-slate-100 text-slate-600';
-                let rankText = `#${rank}`;
-                if (rank === 1) {
-                  badgeColor = 'bg-amber-100 text-amber-800 border border-amber-300';
-                  rankText = '🥇 #1 Top Host';
-                } else if (rank === 2) {
-                  badgeColor = 'bg-slate-100 text-slate-800 border border-slate-300';
-                  rankText = '🥈 #2 Top Host';
-                } else if (rank === 3) {
-                  badgeColor = 'bg-orange-100 text-orange-800 border border-orange-300';
-                  rankText = '🥉 #3 Top Host';
-                }
-
-                return (
-                  <tr key={item.streamer.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 pl-2 font-bold text-slate-900">
-                      <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-extrabold ${badgeColor}`}>
-                        {rankText}
-                      </span>
-                    </td>
-                    <td className="py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <img 
-                          src={item.streamer.avatar} 
-                          alt={item.streamer.name} 
-                          className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200" 
-                        />
-                        <div>
-                          <p className="font-bold text-slate-900 leading-tight">{item.streamer.name}</p>
-                          <p className="text-[10px] text-slate-400">{item.sessions} sesi live</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 font-bold text-slate-900 text-sm">
-                      Rp {item.revenue.toLocaleString('id-ID')}
-                    </td>
-                    <td className="py-3.5 font-semibold text-slate-800">
-                      {item.orders} pesanan
-                    </td>
-                    <td className="py-3.5 text-slate-600">
-                      {item.hours.toFixed(1)} Jam
-                    </td>
-                    <td className="py-3.5 font-bold text-[#ee4d2d]">
-                      Rp {item.revenuePerHour.toLocaleString('id-ID')}/jam
-                    </td>
-                    <td className="py-3.5 font-bold text-emerald-600">
-                      {item.cvr}%
-                    </td>
-                    <td className="py-3.5 text-right pr-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-[#ee4d2d] border border-orange-200">
-                        {item.cvr >= 6 ? 'Superstars' : 'Performer'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* Sesi Live Terakhir (Recent Live Reports) */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">

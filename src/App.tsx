@@ -240,6 +240,24 @@ export default function App() {
               currentRole={currentRole}
               onSaveStreamer={handleSaveStreamer}
               onDeleteStreamer={handleDeleteStreamer}
+              initialSubTab="list"
+              onSubTabChange={(tab) => {
+                if (tab === 'top-performers') setActiveTab('top-performers');
+              }}
+            />
+          )}
+
+          {activeTab === 'top-performers' && (
+            <StreamersView
+              streamers={streamers}
+              sessions={sessions}
+              currentRole={currentRole}
+              onSaveStreamer={handleSaveStreamer}
+              onDeleteStreamer={handleDeleteStreamer}
+              initialSubTab="top-performers"
+              onSubTabChange={(tab) => {
+                if (tab === 'list') setActiveTab('streamers');
+              }}
             />
           )}
 

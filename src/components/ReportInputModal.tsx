@@ -14,7 +14,6 @@ import {
   Camera,
   UploadCloud,
   CheckCircle2,
-  Loader2,
   Image as ImageIcon
 } from 'lucide-react';
 import { LiveSession, Streamer, Shift, ProductCatalog, ProductSoldItem } from '../types';
@@ -88,80 +87,30 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // AI OCR Screenshot Scanner States
-  const [isScanning, setIsScanning] = useState<boolean>(false);
+  // Screenshot Attachment & Reference States
   const [scanSuccessMsg, setScanSuccessMsg] = useState<string>('');
   const [scannedImagePreview, setScannedImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processImageForOcr = async (file: File) => {
+  const handleImageAttachment = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setErrorMsg('File harus berupa gambar screenshot (JPG, PNG, atau WEBP).');
       return;
     }
 
-    setIsScanning(true);
     setScanSuccessMsg('');
     setErrorMsg('');
 
     try {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const base64Data = e.target?.result as string;
         setScannedImagePreview(base64Data);
-
-        try {
-          const res = await fetch('/api/ai-scan-screenshot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageBase64: base64Data,
-              mimeType: file.type,
-            }),
-          });
-
-          const json = await res.json();
-          if (json.success && json.data) {
-            const d = json.data;
-            if (d.orderStatus) setOrderStatus(d.orderStatus);
-            if (d.revenue !== undefined) setRevenue(Number(d.revenue));
-            if (d.activeViewers !== undefined) setActiveViewers(Number(d.activeViewers));
-            if (d.comments !== undefined) setComments(Number(d.comments));
-            if (d.addToCart !== undefined) setAddToCart(Number(d.addToCart));
-
-            if (d.totalViews !== undefined) setTotalViews(Number(d.totalViews));
-            if (d.avgWatchDuration) setAvgWatchDuration(d.avgWatchDuration);
-            if (d.commentRate !== undefined) setCommentRate(Number(d.commentRate));
-            if (d.rpm !== undefined) setRpm(Number(d.rpm));
-            if (d.orders !== undefined) setOrders(Number(d.orders));
-            if (d.averageOrderValue !== undefined) setAverageOrderValue(Number(d.averageOrderValue));
-
-            if (d.uniqueViewers !== undefined) setUniqueViewers(Number(d.uniqueViewers));
-            if (d.peakViewers !== undefined) setPeakViewers(Number(d.peakViewers));
-            if (d.clickRate !== undefined) setClickRate(Number(d.clickRate));
-            if (d.conversionRate !== undefined) setConversionRate(Number(d.conversionRate));
-            if (d.buyers !== undefined) setBuyers(Number(d.buyers));
-            if (d.productsSold !== undefined) setProductsSold(Number(d.productsSold));
-
-            if (d.notes) setNotes(d.notes);
-
-            setScanSuccessMsg(json.isFallback 
-              ? '✨ Berhasil memuat metrik Wawasan Livestream dari contoh screenshot!' 
-              : '✨ Berhasil mengekstrak 16 metrik Wawasan Livestream dengan Gemini Vision!'
-            );
-          } else {
-            setErrorMsg(json.error || 'Gagal membaca metrik dari screenshot.');
-          }
-        } catch (netErr: any) {
-          setErrorMsg(netErr.message || 'Koneksi ke server AI gagal.');
-        } finally {
-          setIsScanning(false);
-        }
+        setScanSuccessMsg('📸 Screenshot Wawasan Livestream berhasil dilampirkan sebagai referensi.');
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      setIsScanning(false);
-      setErrorMsg(err.message || 'Gagal memproses gambar screenshot.');
+      setErrorMsg(err.message || 'Gagal membaca gambar screenshot.');
     }
   };
 
@@ -176,7 +125,7 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
         if (items[i].type.indexOf('image') !== -1) {
           const blob = items[i].getAsFile();
           if (blob) {
-            processImageForOcr(blob);
+            handleImageAttachment(blob);
             break;
           }
         }
@@ -574,36 +523,36 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
             </button>
           </div>
 
-          {/* AI Screenshot Scanner Card */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-50 border-2 border-dashed border-orange-300 relative overflow-hidden transition-all">
+          {/* Screenshot Attachment & Quick Template Card */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-50 border border-orange-200 relative overflow-hidden transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] text-white flex items-center justify-center shrink-0 shadow-xs">
-                  {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                  <Camera className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-slate-900 text-sm">
-                      📸 AI Screenshot Scanner (Wawasan Livestream)
+                      📸 Lampiran Screenshot & Template Shopee Live
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ee4d2d] text-white tracking-wide uppercase">
-                      Gemini Vision
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                      Opsional
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-600 mt-0.5">
-                    Unggah screenshot, seret gambar ke sini, atau langsung tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono text-[10px] font-bold">Ctrl + V</kbd> untuk mengekstrak 16 metrik Shopee otomatis!
+                    Lampirkan screenshot sebagai bukti siaran (atau tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono text-[10px] font-bold">Ctrl + V</kbd>), atau klik isi template otomatis untuk mempercepat pengisian formulir.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
-                      processImageForOcr(e.target.files[0]);
+                      handleImageAttachment(e.target.files[0]);
                     }
                   }}
                   className="hidden"
@@ -612,20 +561,19 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isScanning}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#ee4d2d] to-[#ff6433] hover:from-[#d83f21] hover:to-[#ee4d2d] text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
                 >
-                  {isScanning ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Menganalisis Gambar...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="w-3.5 h-3.5" />
-                      <span>Upload / Scan Screenshot</span>
-                    </>
-                  )}
+                  <UploadCloud className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Pilih Screenshot</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLoadShopeeScreenshotExample}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ee4d2d] hover:bg-[#d83f21] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Isi Template Otomatis</span>
                 </button>
               </div>
             </div>
@@ -640,7 +588,7 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setScanSuccessMsg('')}
-                  className="text-emerald-700 hover:text-emerald-900 text-[11px] font-bold"
+                  className="text-emerald-700 hover:text-emerald-900 text-[11px] font-bold cursor-pointer"
                 >
                   Tutup
                 </button>
@@ -649,16 +597,28 @@ export const ReportInputModal: React.FC<ReportInputModalProps> = ({
 
             {/* Thumbnail preview if uploaded */}
             {scannedImagePreview && (
-              <div className="mt-3 flex items-center gap-3 p-2 bg-white/80 rounded-xl border border-orange-200">
-                <img 
-                  src={scannedImagePreview} 
-                  alt="Thumbnail Screenshot" 
-                  className="w-14 h-14 object-cover rounded-lg border border-slate-200"
-                />
-                <div className="text-[11px]">
-                  <p className="font-bold text-slate-800">Screenshot Shopee Berhasil Dipindai</p>
-                  <p className="text-slate-500">Nilai telah diisikan ke formulir di bawah. Silakan verifikasi atau sesuaikan jika perlu.</p>
+              <div className="mt-3 flex items-center justify-between gap-3 p-2.5 bg-white/90 rounded-xl border border-orange-200">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={scannedImagePreview} 
+                    alt="Thumbnail Screenshot" 
+                    className="w-14 h-14 object-cover rounded-lg border border-slate-200"
+                  />
+                  <div className="text-[11px]">
+                    <p className="font-bold text-slate-800">Screenshot Shopee Dilampirkan</p>
+                    <p className="text-slate-500">Gambar disimpan sebagai referensi visual verifikasi data sesi ini.</p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScannedImagePreview(null);
+                    setScanSuccessMsg('');
+                  }}
+                  className="px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-lg transition-colors font-semibold cursor-pointer"
+                >
+                  Hapus
+                </button>
               </div>
             )}
           </div>

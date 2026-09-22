@@ -9,11 +9,12 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowLeftRight,
-  Timer
+  Timer,
+  Trophy
 } from 'lucide-react';
 import { UserRole } from '../types';
 
-export type NavTab = 'dashboard' | 'input-report' | 'schedules' | 'targets' | 'streamers' | 'products' | 'comparison' | 'voucher-timer';
+export type NavTab = 'dashboard' | 'input-report' | 'schedules' | 'targets' | 'streamers' | 'top-performers' | 'products' | 'comparison' | 'voucher-timer';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -65,9 +66,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'streamers' as NavTab,
-      label: currentRole === 'ADMIN' ? 'Manajemen Streamer' : 'Profil Host',
+      label: currentRole === 'ADMIN' ? 'Data & Tim Streamer' : 'Profil Host',
       icon: Users,
       badge: null,
+    },
+    {
+      id: 'top-performers' as NavTab,
+      label: 'Top Performa Host',
+      icon: Trophy,
+      badge: 'Ranking',
+      badgeColor: 'bg-amber-100 text-amber-800 border-amber-200 font-extrabold',
     },
     {
       id: 'comparison' as NavTab,
